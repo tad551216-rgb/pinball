@@ -146,8 +146,8 @@
     display:flex;align-items:center;justify-content:space-between;
     gap:10px;padding:10px 16px 0 44px;
   }
-  .hint{font-size:11.5px;color:var(--pencil);line-height:1.6}
-  .launch{
+  .hint{font-size:11.5px;color:var(--pencil);line-height:1.6;min-width:0;flex:1 1 auto}
+  .launch{flex:0 0 auto;
     -webkit-appearance:none;appearance:none;cursor:pointer;font-family:inherit;
     font-size:14px;font-weight:700;letter-spacing:.1em;color:var(--aka-deep);
     background:transparent;border:1.5px solid var(--aka);border-radius:8px;
@@ -160,6 +160,9 @@
     text-align:center;
   }
   .foot span{color:#cbc6b8}
+  @media (max-width:430px){
+    .title small{display:none}
+  }
   @media (max-width:380px){
     .title{font-size:21px}.score__val{font-size:22px}
   }
@@ -624,17 +627,25 @@
   // ヘッダーの「つくる手帖」＝ポータルへ戻るリンク（ホーム画面アプリのときは普通の見出し）
   (function(){
     var bl=document.getElementById('backLink');
-    if(!bl) return;
-    var standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone===true;
-    if(standalone){
-      bl.removeAttribute('href');
-    } else {
-      bl.textContent='← つくる手帖';
-      bl.addEventListener('click', function(e){
-        if(document.referrer && /tsukuru-techo/.test(document.referrer) && history.length>1){
-          e.preventDefault(); history.back();
-        }
-      });
+    if(bl){
+      var standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone===true;
+      if(standalone){
+        bl.removeAttribute('href');
+      } else {
+        bl.textContent='← つくる手帖';
+        bl.addEventListener('click', function(e){
+          if(document.referrer && /tsukuru-techo/.test(document.referrer) && history.length>1){
+            e.preventDefault(); history.back();
+          }
+        });
+      }
+    }
+    // 操作ヒントは画面に合わせて短く（タッチ／キーボード）
+    var hintEl=document.getElementById('hint');
+    if(hintEl){
+      var coarse = window.matchMedia && window.matchMedia('(pointer:coarse)').matches;
+      hintEl.textContent = coarse ? '左右タップ＝フリッパー　「発射」長押し'
+                                  : '← →：フリッパー　Space長押し：発射';
     }
   })();
 })();
