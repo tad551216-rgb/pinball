@@ -289,7 +289,7 @@ function stepPhysics(){
     house.rest--;
     ball.x=house.door.x; ball.y=house.door.y; ball.vx=0; ball.vy=0;
     if(house.rest===0){
-      ball.vx=-6.5; ball.vy=-7.5; house.cool=520; S.launch();
+      ball.vx=-6.5; ball.vy=-7.5; S.launch();
     }
   }
   for(let s=0;s<SUB;s++){
@@ -342,9 +342,10 @@ function stepPhysics(){
     }
 
     // 家の玄関
-    if(house.open>0 && house.rest===0 && house.cool===0){
+    if(house.open>0 && house.rest===0){
       if(Math.hypot(ball.x-house.door.x, ball.y-house.door.y)<18){
-        house.rest=150; score+=300; hud();
+        house.rest=150; house.open=0; score+=300; hud();   // 一度入ったら次の完成まで閉店
+
         banner={t:160,text:'お茶とケーキで一休み'};
         if(soundOn){[659,523,392].forEach((f,i)=>setTimeout(()=>tone(f,0.25,'sine',0.14),i*160));}
       }
