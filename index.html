@@ -214,7 +214,7 @@ const wallPads=[
 let banner={t:0,text:''};
 
 /* RGBマスコットの家（右壁）：玄関に入るとお茶とケーキで一休み */
-const house={door:{x:331,y:426}, rest:0, cool:0};
+const house={door:{x:331,y:426}, rest:0, cool:0, open:0};
 
 /* 壁 */
 const walls=[];
@@ -275,6 +275,8 @@ function checkComplete(){
   if(bumpers.every(b=>b.hit)){
     score+=1000; hud(); S.stamp();
     stamp.t=110;
+    house.open=3600;   // 玄関が60秒ひらく
+    banner={t:170,text:'おうちの玄関がひらいた'};
     setTimeout(()=>bumpers.forEach(b=>b.hit=false),1200);
   }
 }
@@ -282,6 +284,7 @@ function checkComplete(){
 function stepPhysics(){
   const SUB=3;
   if(house.cool>0) house.cool--;
+  if(house.open>0 && house.rest===0) house.open--;
   if(house.rest>0){
     house.rest--;
     ball.x=house.door.x; ball.y=house.door.y; ball.vx=0; ball.vy=0;
@@ -339,7 +342,7 @@ function stepPhysics(){
     }
 
     // 家の玄関
-    if(house.rest===0 && house.cool===0){
+    if(house.open>0 && house.rest===0 && house.cool===0){
       if(Math.hypot(ball.x-house.door.x, ball.y-house.door.y)<18){
         house.rest=150; score+=300; hud();
         banner={t:160,text:'お茶とケーキで一休み'};
@@ -439,7 +442,7 @@ function startGame(){
   score=0; balls=3; running=true;
   bumpers.forEach(b=>{b.flash=0;b.hit=false;});
   holes.forEach(h=>{h.lit=false;h.cool=0;});
-  stamp.t=0; banner.t=0; house.rest=0; house.cool=0;
+  stamp.t=0; banner.t=0; house.rest=0; house.cool=0; house.open=0;
   wallPads.forEach(p=>{p.lit=false;p.flash=0;});
   resetBall(); hud(); ac();
   overlay.style.display='none';
@@ -553,9 +556,24 @@ function draw(){
     }
     ctx.beginPath(); ctx.arc(335,392,11,0,7);
     ctx.strokeStyle='#c9a86a'; ctx.lineWidth=3; ctx.stroke();
-    // 玄関（アーチ）
+    // 玄関（アーチ）：完成すると扉がひらく
     ctx.beginPath(); ctx.arc(house.door.x,432,13,Math.PI,0); ctx.lineTo(house.door.x+13,432); ctx.closePath();
-    ctx.fillStyle=house.rest>0?'#6b5d4a':'#4b4741'; ctx.fill();
+    if(house.open>0 || house.rest>0){
+      ctx.fillStyle=house.rest>0?'#6b5d4a':'#4b4741'; ctx.fill();
+    } else {
+      ctx.fillStyle='#c9a86a'; ctx.fill();
+      ctx.strokeStyle='#a8874e'; ctx.lineWidth=2; ctx.stroke();
+      ctx.beginPath(); ctx.arc(house.door.x+6,424,1.8,0,7); ctx.fillStyle='#6b5d4a'; ctx.fill();
+    }
+    // ドアランプ（開いている間は点灯、残り10秒は点滅）
+    const lampOn=house.open>0 && (house.open>600 || Math.floor(Date.now()/300)%2===0);
+    ctx.beginPath(); ctx.arc(house.door.x-16,420,3.5,0,7);
+    ctx.fillStyle=lampOn?'#e8b64e':'#d8d2c2'; ctx.fill();
+    if(lampOn){
+      const gl=ctx.createRadialGradient(house.door.x-16,420,1,house.door.x-16,420,10);
+      gl.addColorStop(0,'rgba(255,236,170,.8)'); gl.addColorStop(1,'rgba(255,236,170,0)');
+      ctx.fillStyle=gl; ctx.beginPath(); ctx.arc(house.door.x-16,420,10,0,7); ctx.fill();
+    }
     // 一休み中：湯気とお茶とケーキ
     if(house.rest>0){
       const bob=Math.sin(Date.now()/300)*2;
