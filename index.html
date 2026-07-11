@@ -203,6 +203,14 @@ const slings=[
   {pts:[[342,462],[342,510],[284,532]], flash:0}
 ];
 
+/* 壁面ターゲット「つ・く・る」：斜め面キッカーで左右往復を散らす */
+const wallPads=[
+  {a:{x:20,y:250},  m:{x:42,y:285},  b:{x:20,y:320},  label:'つ',lit:false,flash:0},
+  {a:{x:350,y:250}, m:{x:328,y:285}, b:{x:350,y:320}, label:'く',lit:false,flash:0},
+  {a:{x:20,y:380},  m:{x:42,y:415},  b:{x:20,y:450},  label:'る',lit:false,flash:0}
+];
+let banner={t:0,text:''};
+
 /* 壁 */
 const walls=[];
 function seg(x1,y1,x2,y2,e){ walls.push({a:{x:x1,y:y1},b:{x:x2,y:y2},e:e==null?0.5:e}); }
@@ -316,6 +324,28 @@ function stepPhysics(){
       }
     }
 
+    for(const pad of wallPads){
+      for(const [p1,p2] of [[pad.a,pad.m],[pad.m,pad.b]]){
+        const cp=closest(ball,p1,p2);
+        const dx=ball.x-cp.x, dy=ball.y-cp.y, d=Math.hypot(dx,dy);
+        if(d<ball.r+5){
+          const nx=dx/(d||1), ny=dy/(d||1);
+          ball.x+=nx*(ball.r+5-d);
+          ball.vx=nx*7.5; ball.vy=ny*7.5-1.5;
+          pad.flash=12;
+          if(!pad.lit){ pad.lit=true; score+=150; }
+          else score+=30;
+          hud(); S.sling();
+          if(wallPads.every(p=>p.lit)){
+            score+=800; hud(); S.bonus();
+            banner={t:110,text:'つ く る ！'};
+            setTimeout(()=>wallPads.forEach(p=>p.lit=false),900);
+          }
+          break;
+        }
+      }
+    }
+
     for(const f of [flipL,flipR]){
       const d1=flipDir(f,f.ang);
       const tip={x:f.px+d1.x*f.len, y:f.py+d1.y*f.len};
@@ -386,7 +416,8 @@ function startGame(){
   score=0; balls=3; running=true;
   bumpers.forEach(b=>{b.flash=0;b.hit=false;});
   holes.forEach(h=>{h.lit=false;h.cool=0;});
-  stamp.t=0;
+  stamp.t=0; banner.t=0;
+  wallPads.forEach(p=>{p.lit=false;p.flash=0;});
   resetBall(); hud(); ac();
   overlay.style.display='none';
 }
@@ -491,6 +522,31 @@ function draw(){
   }
   for(const g of gears){ if(g.sling!=null) drawGear(g); }
 
+  /* 壁面ターゲット つ・く・る */
+  for(const pad of wallPads){
+    softShadow(true);
+    ctx.beginPath(); ctx.moveTo(pad.a.x,pad.a.y+4); ctx.lineTo(pad.m.x,pad.m.y+4); ctx.lineTo(pad.b.x,pad.b.y+4); ctx.closePath();
+    ctx.fillStyle='#a8874e'; ctx.lineJoin='round'; ctx.lineWidth=8; ctx.strokeStyle='#a8874e'; ctx.stroke(); ctx.fill();
+    softShadow(false);
+    ctx.beginPath(); ctx.moveTo(pad.a.x,pad.a.y); ctx.lineTo(pad.m.x,pad.m.y); ctx.lineTo(pad.b.x,pad.b.y); ctx.closePath();
+    ctx.fillStyle='#c9a86a'; ctx.strokeStyle='#c9a86a'; ctx.stroke(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(pad.a.x,pad.a.y); ctx.lineTo(pad.m.x,pad.m.y); ctx.lineTo(pad.b.x,pad.b.y);
+    ctx.strokeStyle=pad.flash>0?'#ffb08c':'#d96a52'; ctx.lineWidth=6; ctx.lineCap='round'; ctx.stroke();
+    if(pad.flash>0) pad.flash--;
+    const lx=pad.a.x<200?pad.m.x-9:pad.m.x+9;
+    ctx.beginPath(); ctx.arc(lx,pad.m.y,9,0,7);
+    ctx.fillStyle=pad.lit?'#e8b64e':'#f7f4ec'; ctx.fill();
+    ctx.strokeStyle=pad.lit?'#b3873a':'rgba(0,0,0,.12)'; ctx.lineWidth=1.5; ctx.stroke();
+    if(pad.lit){
+      const gr=ctx.createRadialGradient(lx,pad.m.y,1,lx,pad.m.y,16);
+      gr.addColorStop(0,'rgba(255,236,170,.7)'); gr.addColorStop(1,'rgba(255,236,170,0)');
+      ctx.fillStyle=gr; ctx.beginPath(); ctx.arc(lx,pad.m.y,16,0,7); ctx.fill();
+    }
+    ctx.fillStyle='#2c5077'; ctx.font='700 11px -apple-system,"Hiragino Sans",sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(pad.label,lx,pad.m.y+0.5);
+  }
+
   /* バンパー（マスコット入り） */
   for(const bp of bumpers){
     softShadow(true);
@@ -583,6 +639,21 @@ function draw(){
     gb.addColorStop(0,'#ffffff'); gb.addColorStop(0.7,'#fff3dc'); gb.addColorStop(1,'#f2d9a8');
     ctx.fillStyle=gb; ctx.beginPath(); ctx.arc(ball.x,ball.y,ball.r,0,7); ctx.fill();
     ctx.beginPath(); ctx.arc(ball.x-3.5,ball.y-4,3,0,7); ctx.fillStyle='rgba(255,255,255,.95)'; ctx.fill();
+  }
+
+  /* バナー（つくる！など） */
+  if(banner.t>0){
+    const fade=banner.t<20?banner.t/20:1;
+    ctx.save(); ctx.globalAlpha=fade;
+    softShadow(true);
+    rounded(120,438,160,36,10); ctx.fillStyle='#c9a86a'; ctx.fill();
+    softShadow(false);
+    rounded(125,442,150,28,8); ctx.fillStyle='#f7f4ec'; ctx.fill();
+    ctx.fillStyle='#c9472e'; ctx.font='700 18px -apple-system,"Hiragino Sans",sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(banner.text,200,456.5);
+    ctx.restore();
+    banner.t--;
   }
 
   /* 朱印（完成スタンプ） */
