@@ -253,7 +253,7 @@ function collideSeg(a,b,rad,e){
   return null;
 }
 function clampSpeed(){
-  const lim=ball.inLane?26:15;
+  const lim=ball.inLane?26:19;
   const sp=Math.hypot(ball.vx,ball.vy);
   if(sp>lim){ ball.vx*=lim/sp; ball.vy*=lim/sp; }
 }
@@ -271,7 +271,7 @@ function stepPhysics(){
     for(const f of [flipL,flipR]){
       f.prev=f.ang;
       const tgt=f.pressed?f.up:f.rest;
-      const spd=0.42/SUB;
+      const spd=0.52/SUB;
       if(f.ang>tgt) f.ang=Math.max(tgt,f.ang-spd);
       else if(f.ang<tgt) f.ang=Math.min(tgt,f.ang+spd);
     }
@@ -325,11 +325,11 @@ function stepPhysics(){
         const nx=dx/dd, ny=dy/dd;
         ball.x+=nx*(ball.r+f.r-dd); ball.y+=ny*(ball.r+f.r-dd);
         const vn=ball.vx*nx+ball.vy*ny;
-        if(vn<0){ ball.vx-=1.35*vn*nx; ball.vy-=1.35*vn*ny; }
+        if(vn<0){ ball.vx-=1.5*vn*nx; ball.vy-=1.5*vn*ny; }
         const dPrev=flipDir(f,f.prev);
         const q1={x:f.px+d1.x*f.len*c.t, y:f.py+d1.y*f.len*c.t};
         const q0={x:f.px+dPrev.x*f.len*c.t, y:f.py+dPrev.y*f.len*c.t};
-        ball.vx+=(q1.x-q0.x)*1.4; ball.vy+=(q1.y-q0.y)*1.4;
+        ball.vx+=(q1.x-q0.x)*SUB*1.6; ball.vy+=(q1.y-q0.y)*SUB*1.6;
       }
     }
 
