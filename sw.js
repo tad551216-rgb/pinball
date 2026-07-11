@@ -1,5 +1,5 @@
 /* つくる手帖ピンボール — オフライン用サービスワーカー */
-const CACHE = 'tt-pinball-v5';
+const CACHE = 'tt-pinball-v6';
 const ASSETS = [
   './',
   './index.html',
