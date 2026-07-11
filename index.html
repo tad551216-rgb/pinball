@@ -213,6 +213,9 @@ const wallPads=[
 ];
 let banner={t:0,text:''};
 
+/* RGBマスコットの家（右壁）：玄関に入るとお茶とケーキで一休み */
+const house={door:{x:331,y:426}, rest:0, cool:0};
+
 /* 壁 */
 const walls=[];
 function seg(x1,y1,x2,y2,e){ walls.push({a:{x:x1,y:y1},b:{x:x2,y:y2},e:e==null?0.5:e}); }
@@ -234,6 +237,7 @@ seg(350,190,350,552);
   }
 })();
 const gate={a:{x:350,y:190},b:{x:377,y:158}};
+seg(316,368,350,350,0.5);   // 家の屋根
 
 /* 飾り歯車 */
 const gears=[
@@ -277,6 +281,14 @@ function checkComplete(){
 
 function stepPhysics(){
   const SUB=3;
+  if(house.cool>0) house.cool--;
+  if(house.rest>0){
+    house.rest--;
+    ball.x=house.door.x; ball.y=house.door.y; ball.vx=0; ball.vy=0;
+    if(house.rest===0){
+      ball.vx=-6.5; ball.vy=-7.5; house.cool=520; S.launch();
+    }
+  }
   for(let s=0;s<SUB;s++){
     for(const f of [flipL,flipR]){
       f.prev=f.ang;
@@ -285,7 +297,7 @@ function stepPhysics(){
       if(f.ang>tgt) f.ang=Math.max(tgt,f.ang-spd);
       else if(f.ang<tgt) f.ang=Math.min(tgt,f.ang+spd);
     }
-    if(!ball.alive) continue;
+    if(!ball.alive || house.rest>0) continue;
 
     ball.vy+=0.10;
     ball.vx*=0.9992; ball.vy*=0.9992;
@@ -323,6 +335,15 @@ function stepPhysics(){
         sl.flash=12; score+=10; hud(); S.sling();
         const g=gears.find(g=>g.sling===slings.indexOf(sl));
         if(g) g.rot+=0.6;
+      }
+    }
+
+    // 家の玄関
+    if(house.rest===0 && house.cool===0){
+      if(Math.hypot(ball.x-house.door.x, ball.y-house.door.y)<18){
+        house.rest=150; score+=300; hud();
+        banner={t:160,text:'お茶とケーキで一休み'};
+        if(soundOn){[659,523,392].forEach((f,i)=>setTimeout(()=>tone(f,0.25,'sine',0.14),i*160));}
       }
     }
 
@@ -381,7 +402,7 @@ function stepPhysics(){
     clampSpeed();
 
     // 詰まり防止：盤面内で3秒静止したら軽く押し出す
-    if(ball.alive && !ball.inLane && !flipL.pressed && !flipR.pressed
+    if(ball.alive && !ball.inLane && house.rest===0 && !flipL.pressed && !flipR.pressed
        && Math.hypot(ball.vx,ball.vy)<0.3){
       stuck++;
       if(stuck>180*SUB/3){
@@ -418,7 +439,7 @@ function startGame(){
   score=0; balls=3; running=true;
   bumpers.forEach(b=>{b.flash=0;b.hit=false;});
   holes.forEach(h=>{h.lit=false;h.cool=0;});
-  stamp.t=0; banner.t=0;
+  stamp.t=0; banner.t=0; house.rest=0; house.cool=0;
   wallPads.forEach(p=>{p.lit=false;p.flash=0;});
   resetBall(); hud(); ac();
   overlay.style.display='none';
@@ -508,6 +529,51 @@ function draw(){
   ctx.beginPath(); ctx.moveTo(350,190); ctx.lineTo(350,552); ctx.stroke();
   ctx.strokeStyle='#7a9b6d'; ctx.lineWidth=6;
   ctx.beginPath(); ctx.moveTo(350,190); ctx.lineTo(377,158); ctx.stroke();
+
+  /* RGBマスコットの家 */
+  (function(){
+    // 本体（右壁のくぼみ風）
+    softShadow(true);
+    rounded(318,376,32,56,6); ctx.fillStyle='#e5d9bd'; ctx.fill();
+    softShadow(false);
+    rounded(320,374,30,56,6); ctx.fillStyle='#f7f4ec'; ctx.fill();
+    // 屋根（朱）
+    ctx.beginPath(); ctx.moveTo(314,372); ctx.lineTo(352,352); ctx.lineTo(352,372); ctx.closePath();
+    ctx.fillStyle='#d96a52'; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(314,372); ctx.lineTo(352,352);
+    ctx.strokeStyle='#a94a36'; ctx.lineWidth=3; ctx.lineCap='round'; ctx.stroke();
+    // 煙突
+    ctx.fillStyle='#c9a86a'; ctx.fillRect(340,344,7,12);
+    // 丸窓（家族が見える）
+    ctx.beginPath(); ctx.arc(335,392,11,0,7); ctx.fillStyle='#fff'; ctx.fill();
+    const fam=document.getElementById('ovImg');
+    if(fam && fam.complete && fam.naturalWidth>0){
+      ctx.save(); ctx.beginPath(); ctx.arc(335,392,10,0,7); ctx.clip();
+      ctx.drawImage(fam,335-14,392-11,28,24); ctx.restore();
+    }
+    ctx.beginPath(); ctx.arc(335,392,11,0,7);
+    ctx.strokeStyle='#c9a86a'; ctx.lineWidth=3; ctx.stroke();
+    // 玄関（アーチ）
+    ctx.beginPath(); ctx.arc(house.door.x,432,13,Math.PI,0); ctx.lineTo(house.door.x+13,432); ctx.closePath();
+    ctx.fillStyle=house.rest>0?'#6b5d4a':'#4b4741'; ctx.fill();
+    // 一休み中：湯気とお茶とケーキ
+    if(house.rest>0){
+      const bob=Math.sin(Date.now()/300)*2;
+      ctx.font='20px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('☕',300,382+bob);
+      ctx.fillText('🍰',278,396-bob);
+      ctx.strokeStyle='rgba(120,110,95,.5)'; ctx.lineWidth=2; ctx.lineCap='round';
+      for(const ox of [-4,3]){
+        ctx.beginPath();
+        const ph=Date.now()/240+ox;
+        for(let i=0;i<=8;i++){
+          const y=370-i*3+bob, x=300+ox+Math.sin(ph+i*0.8)*2.5;
+          if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+        }
+        ctx.stroke();
+      }
+    }
+  })();
 
   for(const sl of slings){
     const p=sl.pts;
@@ -648,10 +714,10 @@ function draw(){
     const fade=banner.t<20?banner.t/20:1;
     ctx.save(); ctx.globalAlpha=fade;
     softShadow(true);
-    rounded(120,438,160,36,10); ctx.fillStyle='#c9a86a'; ctx.fill();
+    rounded(96,438,208,36,10); ctx.fillStyle='#c9a86a'; ctx.fill();
     softShadow(false);
-    rounded(125,442,150,28,8); ctx.fillStyle='#f7f4ec'; ctx.fill();
-    ctx.fillStyle='#c9472e'; ctx.font='700 18px -apple-system,"Hiragino Sans",sans-serif';
+    rounded(101,442,198,28,8); ctx.fillStyle='#f7f4ec'; ctx.fill();
+    ctx.fillStyle='#c9472e'; ctx.font='700 17px -apple-system,"Hiragino Sans",sans-serif';
     ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.fillText(banner.text,200,456.5);
     ctx.restore();
