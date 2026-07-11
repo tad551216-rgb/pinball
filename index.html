@@ -252,8 +252,9 @@ function collideSeg(a,b,rad,e){
   return null;
 }
 function clampSpeed(){
+  const lim=ball.inLane?26:15;
   const sp=Math.hypot(ball.vx,ball.vy);
-  if(sp>15){ ball.vx*=15/sp; ball.vy*=15/sp; }
+  if(sp>lim){ ball.vx*=lim/sp; ball.vy*=lim/sp; }
 }
 function checkComplete(){
   if(bumpers.every(b=>b.hit)){
@@ -656,7 +657,7 @@ function releaseCharge(){
   if(!plunger.charging) return;
   plunger.charging=false; btnLaunch.classList.remove('charging');
   if(running && ball.alive && ball.inLane){
-    ball.vy=-(11+plunger.power*9);
+    ball.vy=-(14+plunger.power*10);
     S.launch();
   }
   plunger.power=0;
@@ -688,7 +689,7 @@ document.addEventListener('dblclick', e=>e.preventDefault());
 
 /* ================= メインループ ================= */
 function loop(){
-  if(plunger.charging) plunger.power=Math.min(1,plunger.power+0.02);
+  if(plunger.charging) plunger.power=Math.min(1,plunger.power+0.025);
   if(running) stepPhysics();
   draw();
   requestAnimationFrame(loop);
