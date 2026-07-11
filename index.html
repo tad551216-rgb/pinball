@@ -36,19 +36,19 @@
     width:100%;max-width:520px;display:flex;align-items:center;justify-content:space-between;
     padding:8px 14px 4px;gap:8px;
   }
-  .titleWrap{min-width:0;}
+  .titleWrap{min-width:0;overflow:hidden;}
   #backLink{
     display:inline-block;font-size:10px;color:var(--wood-d);text-decoration:none;font-weight:700;
     letter-spacing:.08em;margin-bottom:1px;
   }
-  header h1{font-size:15px;color:var(--indigo);letter-spacing:.05em;font-weight:700;white-space:nowrap;}
+  header h1{font-size:13px;color:var(--indigo);letter-spacing:.03em;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   header h1 small{font-size:10px;color:var(--wood-d);font-weight:600;margin-left:4px;}
   .hud{display:flex;gap:6px;font-size:12px;font-weight:700;color:var(--indigo);flex-shrink:0;}
   .hud .chip{
-    background:#fff;border:2px solid var(--indigo);border-radius:10px;padding:2px 7px;
-    box-shadow:0 3px 0 var(--indigo);min-width:56px;text-align:center;
+    background:#fff;border:2px solid var(--indigo);border-radius:9px;padding:1px 6px;
+    box-shadow:0 2px 0 var(--indigo);min-width:48px;text-align:center;
   }
-  .hud .chip b{font-variant-numeric:tabular-nums;font-size:13px;}
+  .hud .chip b{font-variant-numeric:tabular-nums;font-size:12px;}
   .hud .chip span{display:block;font-size:8px;color:var(--wood-d);letter-spacing:.1em;}
   #stage{flex:1;width:100%;max-width:520px;display:flex;align-items:center;justify-content:center;min-height:0;}
   canvas{display:block;border-radius:18px;}
@@ -127,6 +127,8 @@ function fitBoard(){
 }
 window.addEventListener('resize',fitBoard);
 window.addEventListener('orientationchange',()=>setTimeout(fitBoard,300));
+window.addEventListener('load',()=>{ fitBoard(); setTimeout(fitBoard,250); setTimeout(fitBoard,800); });
+if(window.visualViewport) window.visualViewport.addEventListener('resize',fitBoard);
 
 /* マスコット（ローカル埋め込み・通信なし） */
 const MASC={
@@ -765,7 +767,11 @@ document.addEventListener('dblclick', e=>e.preventDefault());
 (function(){
   try{
     const standalone=(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone===true;
-    if(standalone) document.getElementById('backLink').classList.add('hidden');
+    if(standalone){
+      document.getElementById('backLink').classList.add('hidden');
+      document.querySelector('.hint').classList.add('hidden');
+      setTimeout(fitBoard,50);
+    }
   }catch(e){}
 })();
 
